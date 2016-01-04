@@ -1,3 +1,7 @@
+Thomas van der Veen
+
+10346481
+
 # Proposal Programmeerproject 2016
 ## Data visualisatie over de economische intergatie van Europa
 ----------------------
