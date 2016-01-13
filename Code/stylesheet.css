@@ -1,0 +1,23 @@
+.container
+{
+	position: absolute;
+    margin-right: auto;
+    margin-left: auto;
+    border-style: solid;
+    border-width: medium;
+    border-color: green;
+}
+#graph
+{
+	margin-top: 30px;
+}
+
+
+.containertitle
+{
+	text-align: center;
+    font-family: "Arial", Times, serif;
+    font-size: 20px;
+}
+
+
