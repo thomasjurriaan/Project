@@ -6,11 +6,7 @@ d3.json('Data/Data files/convertedtradeflows.json', function(error,graphdata)
   graphData = graphdata;
   drawBars(2009);
   drawGraph("GRC");
-  done: function(datamap) {
-        datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
-            alert(geography.properties.name);
-        });
-    }
+
 })
 d3.json('Data/Data files/countrylines.json', function(error,linedata)
 {
@@ -97,7 +93,6 @@ function drawGraph(country)
       .orient('left')
       .tickSubdivide(true);
 
-  console.log(Math.max.apply(Math,countryImport));
   vis.append('svg:g')
   .attr('class', 'x axis')
   .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
@@ -110,10 +105,10 @@ function drawGraph(country)
 
   var lineFunc = d3.svg.line()
   .x(function(d) {
-    return xScale(years);
+    return xScale(parseInt(years));
   })
   .y(function(d) {
-    return yScale(countryImport);
+    return yScale(parseInt(countryImport));
   })
   .interpolate('linear');
 
@@ -122,6 +117,11 @@ function drawGraph(country)
   .attr('stroke', 'blue')
   .attr('stroke-width', 2)
   .attr('fill', 'none');
+
+  vis.append('svg:rect')
+    .attr("width", "30000")
+    .attr("height", "30")
+
 }
 
 
