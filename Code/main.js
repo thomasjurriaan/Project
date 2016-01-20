@@ -1,18 +1,3 @@
-var graphData;
-var lineData;
-d3.json('Data/Data files/convertedtradeflows.json', function(error,graphdata)
-{
-  console.log("Geef niet op Thomas, je kunt het!")
-  graphData = graphdata;
-  drawBars(2009);
-  drawGraph("GRC");
-
-})
-d3.json('Data/Data files/countrylines.json', function(error,linedata)
-{
-  lineData = linedata;
-})
-
 var map = new Datamap({
         scope: 'world',
         element: document.getElementById('map'),
@@ -28,12 +13,33 @@ var map = new Datamap({
           return {path: path, projection: projection};
         },})
 
+var graphData;
+var lineData;
+var countriesInGraph = []
+var graphInitialized = false;
+d3.json('Data/Data files/convertedtradeflows.json', function(error,graphdata)
+{
+  console.log("Geef niet op Thomas, je kunt het!")
+  graphData = graphdata;
+  drawBars(2009);
+  drawGraph("GRC");
+  map.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
+            drawGraph(geography.id);
+        });
+
+})
+d3.json('Data/Data files/countrylines.json', function(error,linedata)
+{
+  lineData = linedata;
+})
+
 function drawBars(year)
 {
   //draw import
   var imports = graphData['Imports'][year];
   var exports = graphData['Exports'][year];
   var keys = Object.keys(imports);
+  console.log(keys);
   var importvalues = Object.keys( imports ).map(function ( key ) { return imports[key]; });
   var exportvalues = Object.keys( exports ).map(function ( key ) { return exports[key]; });
   var max = Math.max(Math.max.apply(Math,importvalues),Math.max.apply(Math,exportvalues));
@@ -67,7 +73,14 @@ function drawGraph(country)
       countryImport[i] = 0
     }
   }
-  console.log(countryImport)
+  countriesInGraph.push(countryImport);
+  var maxCountries = [];
+  for(var i = 0; i < countriesInGraph.length; i++)
+  {
+    console.log(Math.max.apply(Math, countriesInGraph[i]));
+    maxCountries.push(Math.max.apply(Math, countriesInGraph[i]));
+  }
+  console.log(Math.max.apply(Math,maxCountries));
   var vis = d3.select("#visualisation"),
     WIDTH = 1000,
     HEIGHT = 500,
@@ -82,7 +95,7 @@ function drawGraph(country)
               .domain([1870,2009]),
     yScale = d3.scale.linear()
               .range([HEIGHT - MARGINS.top, MARGINS.bottom])
-              .domain([0,Math.max.apply(Math,countryImport)]),
+              .domain([0, Math.max.apply(Math,maxCountries)]),
     xAxis = d3.svg.axis()
       .scale(xScale)
       .tickSize(10)
@@ -93,35 +106,45 @@ function drawGraph(country)
       .orient('left')
       .tickSubdivide(true);
 
+  if(graphInitialized == false)
+  {
   vis.append('svg:g')
-  .attr('class', 'x axis')
-  .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
-  .call(xAxis);
+    .attr('class', 'axis')
+    .attr('id', 'xaxis')
+    .attr('transform', 'translate(0,' + (HEIGHT - MARGINS.bottom) + ')')
+    .call(xAxis);
 
   vis.append('svg:g')
-    .attr('class', 'y axis')
+    .attr('id','yaxis')
+    .attr('class', 'axis')
     .attr('transform', 'translate(' + (MARGINS.left) + ','+(MARGINS.bottom-40)+')')
     .call(yAxis);
+  graphInitialized = true;
+  }
+  else
+  {
+    vis.select('#yaxis')
+    .transition().duration(100)
+    .call(yAxis);
+  }
 
   var lineFunc = d3.svg.line()
-  .x(function(d) {
-    return xScale(parseInt(years));
-  })
-  .y(function(d) {
-    return yScale(parseInt(countryImport));
+            .x(function(d,i) {
+              return xScale(parseInt(years[i]));
+            })
+            .y(function(d,i) {
+              return yScale(parseInt(countryImport[i]));
   })
   .interpolate('linear');
 
   vis.append('svg:path')
+  .attr('class','lines')
   .attr('d', lineFunc(countryImport,years))
   .attr('stroke', 'blue')
   .attr('stroke-width', 2)
-  .attr('fill', 'none');
-
-  vis.append('svg:rect')
-    .attr("width", "30000")
-    .attr("height", "30")
-
+  .attr('fill', 'none')
+  .attr('transform', 'translate(0,'+(MARGINS.bottom-40)+')');
 }
+
 
 
