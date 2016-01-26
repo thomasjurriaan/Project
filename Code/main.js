@@ -9,14 +9,12 @@ var map = new Datamap({
           var projection = d3.geo.equirectangular()
             .center([15, 55])
             .rotate([8, 0])
-            .scale(850)
+            .scale(500)
             .translate([element.offsetWidth / 2, element.offsetHeight / 2]);
           var path = d3.geo.path()
             .projection(projection);
-
           return {path: path, projection: projection};
         },})
-
 var graphData;
 var lineData;
 var countriesInGraph_Importdata = [];
@@ -24,14 +22,16 @@ var countriesInGraph_Exportdata = [];
 var countriesInGraph_name = [];
 var graphInitialized = false;
 var selectedCountries = {};
+var mapscale = window.getComputedStyle(document.getElementById('map'));
 d3.json('Data/Data files/convertedtradeflows.json', function(error,graphdata)
 {
   graphData = graphdata;
   drawBars(endYear);
   drawGraph("GRC");
+  setSlider(); 
   map.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
-            drawGraph(geography.id);
-            drawLines(geography.id, 2009);
+            drawLines(geography.id, 2005, 'exports');
+            drawGraph(geography.id);           
         });
 })
 d3.json('Data/Data files/countrylines.json', function(error,linedata)
@@ -41,8 +41,35 @@ d3.json('Data/Data files/countrylines.json', function(error,linedata)
     .attr("x", function(d) {
       return map.path.centroid(d)[0]})
     .attr('y', function(d) {
-      return map.path.centroid(d)[0]})
+      return map.path.centroid(d)[1]})
 })
+var europe = ['AZE','GEO','ARM','-99','TUR','ALB','AND','AUT','BLR','BEL','BIH','BGR','HRV','CYP','CZE','DNK','EST','FRO','FIN','FRA','DEU','GIB','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX','MKD','MLT','MDA','MCO','NLD','NOR','POL','PRT','ROU','RUS','SMR','SRB','SVK','SVN','ESP','SWE','CHE','UKR','GBR','VAT','RSB','IMN','XKX','MNE'];
+var allcountries = map.svg.selectAll(".datamaps-subunit");
+for(var i = 0; i < allcountries[0].length; i++)
+{
+  var inEurope = false;
+  for(var j = 0; j < europe.length; j++)
+  {
+    if(allcountries[0][i].id == europe[j])
+    {
+      inEurope = true
+    }
+  }
+  if(inEurope == false){allcountries[0][i].remove()}
+}
+if(window.addEventListener) {
+    window.addEventListener('resize', function() {
+        windowChange();
+    }, true);
+function setSlider(){
+  d3.select('#slider')
+  .attr('min', startYear)
+  .attr('max',endYear)
+
+  // d3.select('#map').append(d3.slider().axis(true).min(startYear).max(endYear).step(5).on("slide", function(evt, value) {
+  //   console.log(d3.select('#slider3text').text(value));
+  // }))
+}
 
 function drawBars(year)
 {
@@ -65,44 +92,47 @@ function drawBars(year)
 }
 function drawGraph(country)
 {
-  countryAlreadySelected = false;
-  for(var i = 0; i < countriesInGraph_name.length;i++)
+  if(country != null)
   {
-    if(countriesInGraph_name[i] == country)
+    countryAlreadySelected = false;
+    for(var i = 0; i < countriesInGraph_name.length;i++)
     {
-      console.log("should remove country now");
-      d3.selectAll('#'+ country + '_linegraph').remove();
-      countriesInGraph_Importdata.splice(i,1);
-      countriesInGraph_Exportdata.splice(i,1);
-      countriesInGraph_name.splice(i,1);
-      selectedCountries[country] = '#ABDDA4'
-      countryAlreadySelected = true;
+      if(countriesInGraph_name[i] == country)
+      {
+        d3.selectAll('#'+ country + '_linegraph').remove();
+        d3.selectAll('.datamaps-arc').remove();
+        countriesInGraph_Importdata.splice(i,1);
+        countriesInGraph_Exportdata.splice(i,1);
+        countriesInGraph_name.splice(i,1);
+        selectedCountries[country] = '#ABDDA4'
+        countryAlreadySelected = true;
+      }
     }
-  }
-  if(countryAlreadySelected == false)
-  {
-    countriesInGraph_name.push(country);
-    var countryImport=[];
-    var countryExport=[];
-    for(var i=startYear;i<endYear + 1;i++)
+    if(countryAlreadySelected == false)
     {
-      countryImport.push(Math.round(graphData["Imports"][i][country]));
-      countryExport.push(Math.round(graphData["Exports"][i][country]));
-    }
+      countriesInGraph_name.push(country);
+      var countryImport=[];
+      var countryExport=[];
+      for(var i=startYear;i<endYear + 1;i++)
+      {
+        countryImport.push(Math.round(graphData["Imports"][i][country]));
+        countryExport.push(Math.round(graphData["Exports"][i][country]));
+      }
 
-    for(i=0; i < countryImport.length; i++)
-    {
-      if(isNaN(countryImport[i]))
+      for(i=0; i < countryImport.length; i++)
       {
-        countryImport[i] = 0;
+        if(isNaN(countryImport[i]))
+        {
+          countryImport[i] = 0;
+        }
+        if(isNaN(countryExport[i]))
+        {
+          countryExport[i] = 0;
+        }
       }
-      if(isNaN(countryExport[i]))
-      {
-        countryExport[i] = 0;
-      }
+      countriesInGraph_Exportdata.push(countryExport);
+      countriesInGraph_Importdata.push(countryImport);
     }
-    countriesInGraph_Exportdata.push(countryExport);
-    countriesInGraph_Importdata.push(countryImport);
   }
   var years = Array.apply(null, Array(endYear - startYear + 1)).map(function (_, i) {return startYear + i;});
   var maxImport = [];
@@ -113,7 +143,7 @@ function drawGraph(country)
     maxExport.push(Math.max.apply(Math, countriesInGraph_Exportdata[i]));
   }
   var vis = d3.select("#visualisation"),
-    WIDTH = 1000,
+    WIDTH = parseInt(window.getComputedStyle(document.getElementById('visualisation'))['width']),
     HEIGHT = 500,
     MARGINS = {
         top: 20,
@@ -157,6 +187,10 @@ function drawGraph(country)
     vis.select('#yaxis')
     .transition().duration(100)
     .call(yAxis);
+
+    vis.select('#xaxis')
+    .transition().duration(100)
+    .call(xAxis);
   }
 
   var lineFunc = d3.svg.line()
@@ -178,64 +212,88 @@ function drawGraph(country)
     .transition().duration(1000)
     .attr('d', function(d,i){return lineFunc(d,years)});
 
-  vis.selectAll('.import')
-    .data(countriesInGraph_Importdata).enter().append('svg:path')
-    .attr('d', function(d,i){return lineFunc(d,years)})
-    .attr('class','lines')
-    .attr('class','import')
-    .attr('stroke', function(d,i){return colours[i%colours.length]})
-    .attr('id', country + "_linegraph")
-    .attr('stroke-width', 2)
-    .attr('fill', 'none')
-    .attr('transform', 'translate(0,'+(MARGINS.bottom-40)+')');  
+  if(country != null)
+  {
+    vis.selectAll('.import')
+      .data(countriesInGraph_Importdata).enter().append('svg:path')
+      .attr('d', function(d,i){return lineFunc(d,years)})
+      .attr('class','lines')
+      .attr('class','import')
+      .attr('stroke', function(d,i){return colours[i%colours.length]})
+      .attr('id', country + "_linegraph")
+      .attr('stroke-width', 2)
+      .attr('fill', 'none')
+      .attr('transform', 'translate(0,'+(MARGINS.bottom-40)+')');  
 
-  vis.selectAll('.export')
-    .data(countriesInGraph_Exportdata).enter().append('svg:path')
-    .attr('d', function(d,i){return lineFunc(d,years)})
-    .attr('class','lines')
-    .attr('class', 'export')
-    .attr('id', country + "_linegraph")
-    .attr('stroke', function(d,i){return colours[i%colours.length]})
-    .style("stroke-dasharray", ("3, 3"))
-    .attr('stroke-width', 2)
-    .attr('fill', 'none')
-    .attr('transform', 'translate(0,'+(MARGINS.bottom-40)+')');
-
+    vis.selectAll('.export')
+      .data(countriesInGraph_Exportdata).enter().append('svg:path')
+      .attr('d', function(d,i){return lineFunc(d,years)})
+      .attr('class','lines')
+      .attr('class', 'export')
+      .attr('id', country + "_linegraph")
+      .attr('stroke', function(d,i){return colours[i%colours.length]})
+      .style("stroke-dasharray", ("3, 3"))
+      .attr('stroke-width', 2)
+      .attr('fill', 'none')
+      .attr('transform', 'translate(0,'+(MARGINS.bottom-40)+')');
+  }
   map.svg.selectAll('.datamaps-subunit') //http://bl.ocks.org/dmachat/b75a5a01cfb31cf92cf5 
   {
-    if(countryAlreadySelected == false)
+    if(countryAlreadySelected == false && country != null)
     {
       var colour = document.getElementById(country + "_linegraph").getAttribute('stroke')
       selectedCountries[country] = colour;
     }
-    console.log(selectedCountries);
     map.updateChoropleth(selectedCountries);
   };
 }
 
-function drawLines(country, year)
+function drawLines(country, year, type)
 {
   var importDict = lineData['Imports'][year][country];
   var exportDict = lineData['Exports'][year][country];
-  var importKeys = Object.keys(importDict);
-  var exportKeys = Object.keys(exportDict);
-  for(var i = 0; i < importKeys.length; i++)
+  var superdict = [];
+
+  if(type == 'imports')
   {
-    superdict = []
-    for(var i = 0; i < importKeys.length; i++)
+    for(var i = 0; i < importDict.length; i++)
     {
       dict = {}
-      // dict['origin'] = {'latitude':document.getElementsByTagName('datamaps-subunit '+country).getAttribute('class'),
-      //                   'longitude':document.getElementsByTagName('datamaps-subunit '+country).getAttribute('x')};
-      // dict['destination'] = {'latitude':document.getElementsByTagName('datamaps-subunit '+importKeys[i]).getAttribute('y'), 
-      //                         'longitude': document.getElementsByTagName('datamaps-subunit '+importKeys[i]).getAttribute('x')};
-      // dict['options'] = {'stroke-width': (importDict[importKeys[i]] / 10000), strokeColor : 'red'};
+      dict['origin'] = {'latitude':document.getElementById(country).getAttribute('y'),
+                        'longitude':document.getElementById(country).getAttribute('x')};
+      dict['destination'] = {'latitude':document.getElementById(importDict[i][0]).getAttribute('y'), 
+                              'longitude': document.getElementById(importDict[i][0]).getAttribute('x')};
+      dict['options'] = {'strokeWidth': (importDict[i][1]/1000), 'strokeColor' : 'red'};
       superdict.push(dict)
     }
-    map.arc(superdict);
-    
   }
+  else if(type == 'exports')
+  {
+    for(var i = 0; i < exportDict.length; i++)
+    {
+      dict = {}
+      dict['origin'] = {'latitude':document.getElementById(country).getAttribute('y'),
+                        'longitude':document.getElementById(country).getAttribute('x')};
+      dict['destination'] = {'latitude':document.getElementById(exportDict[i][0]).getAttribute('y'), 
+                              'longitude': document.getElementById(exportDict[i][0]).getAttribute('x')};
+      dict['options'] = {'strokeWidth': (exportDict[i][1]/1000), 'strokeColor' : 'red'};
+      superdict.push(dict)
+    }
+  }
+  map.arc(superdict);
+  d3.selectAll('.datamaps-arc')
+    .style('stroke-opacity',0.7)
+}
 
+function windowChange()
+{
+    var newmapscale = window.getComputedStyle(document.getElementById('map'))
+    drawGraph(null);
+    setSlider();
+    map.svg.transition()
+      .duration(750)
+      .style("stroke-width", "1.5px")
+      .attr("transform", "scale:" + parseInt(newmapscale['width'])/parseInt(mapscale['width']) + ',' + parseInt(newmapscale['height'])/parseInt(mapscale['height']));
 
-
+}
 }

@@ -1,6 +1,6 @@
 (function() {
   var svg;
-
+  
   //save off default references
   var d3 = window.d3, topojson = window.topojson;
 
@@ -193,6 +193,9 @@
       .attr('class', function(d) {
         return 'datamaps-subunit ' + d.id;
       })
+      .attr('id', function(d) {
+        return d.id;
+      })
       .attr('data-info', function(d) {
         return JSON.stringify( colorCodeData[d.id]);
       })
@@ -216,8 +219,7 @@
       .style('stroke-width', geoConfig.borderWidth)
       .style('stroke-opacity', geoConfig.borderOpacity)
       .style('stroke', geoConfig.borderColor);
-  }
-
+  };
   function handleGeographyConfig () {
     var hoverover;
     var svg = this.svg;
@@ -357,8 +359,8 @@
             return val(datum.strokeWidth, options.strokeWidth, datum);
         })
         .attr('d', function(datum) {
-            var originXY = self.latLngToXY(val(datum.origin.latitude, datum), val(datum.origin.longitude, datum))
-            var destXY = self.latLngToXY(val(datum.destination.latitude, datum), val(datum.destination.longitude, datum));
+            var originXY = [parseInt(val(datum.origin.longitude, datum)), parseInt(val(datum.origin.latitude, datum))]//self.latLngToXY()
+            var destXY = [parseInt(val(datum.destination.longitude, datum)), parseInt(val(datum.destination.latitude, datum))];//self.latLngToXY()
             var midXY = [ (originXY[0] + destXY[0]) / 2, (originXY[1] + destXY[1]) / 2];
             if (options.greatArc) {
                   // TODO: Move this to inside `if` clause when setting attr `d`

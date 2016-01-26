@@ -3,15 +3,17 @@
 	position: absolute;
     margin-right: auto;
     margin-left: auto;
-    border-style: solid;
-    border-width: medium;
-    border-color: green;
 }
-#graph
+#map
 {
-	margin-top: 30px;
+    left: 10px;
+    
 }
 
+#graph
+{
+	right : 10px;
+}
 
 .containertitle
 {
@@ -29,5 +31,9 @@
     font-family: Lato;
     font-size: 13px;
 }
-
+#slider{
+    left: 20px;
+    right: 20px;
+    width: 100% - 40px;
+}
 
