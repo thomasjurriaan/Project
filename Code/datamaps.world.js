@@ -1739,9 +1739,9 @@
             }, {
                 "type": "Polygon",
                 "properties": {
-                    "name": "Kosovo"
+                    "name": "Kosovo (former provence of Serbia)"
                 },
-                "id": "-99",
+                "id": "SRB",
                 "arcs": [
                     [-18, 405, 406, 407]
                 ]

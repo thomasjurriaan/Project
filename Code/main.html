@@ -8,13 +8,18 @@
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="topojson.min.js"></script>
     <script src="datamaps.world.js"></script>
+    <script src="d3.slider.js"></script>
     <div id="map" class="container" style="position: absolute; width: 48%; height:600px;"></div>
     <script src="main.js"></script>
    </head>
    <body>
     <div id="graph" class="container" style="position: absolute; width:48%;height:600px;">
-      <P class="containertitle">Loading...</P>
       <svg id="visualisation" width="92%" height="530"></svg>
+      <svg id='pointer'></svg>
     </div>
-    <input id='slider' type='range' style='position: relative; width 100% - 40px;'><input>
+    <input id='slider' type = 'range'>
+    <form class= 'buttons' action="">
+      <input name='buttons' type= 'radio' value='imports' checked>Import<br>
+      <input name='buttons' type= 'radio' value="exports">Export      
+    </form>    
 	 </body>

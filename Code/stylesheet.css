@@ -31,9 +31,18 @@
     font-family: Lato;
     font-size: 13px;
 }
-#slider{
+#slider
+{
+    position: absolute;
     left: 20px;
     right: 20px;
     width: 100% - 40px;
+    bottom: 100px;
+}
+
+.buttons
+{
+    position: fixed;
+    z-index: 999;
 }
 

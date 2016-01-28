@@ -1,7 +1,7 @@
 console.log("Geef niet op Thomas, je kunt het!");
 // Constants
-startYear = 1960;
-endYear = 2009;
+var startYear = 1960;
+var endYear = 2009;
 var map = new Datamap({
         scope: 'world',
         element: document.getElementById('map'),
@@ -17,6 +17,8 @@ var map = new Datamap({
         },})
 var graphData;
 var lineData;
+var slider;
+var currentcountry = 'GRC';
 var countriesInGraph_Importdata = [];
 var countriesInGraph_Exportdata = [];
 var countriesInGraph_name = [];
@@ -25,50 +27,42 @@ var selectedCountries = {};
 var mapscale = window.getComputedStyle(document.getElementById('map'));
 d3.json('Data/Data files/convertedtradeflows.json', function(error,graphdata)
 {
-  graphData = graphdata;
-  drawBars(endYear);
-  drawGraph("GRC");
   setSlider(); 
+  graphData = graphdata;
+  drawBars(Math.round(slider.value));
   map.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
-            drawLines(geography.id, 2005, 'exports');
-            drawGraph(geography.id);           
+            drawGraph(geography.id); 
+            currentcountry = geography.id;          
         });
-})
-d3.json('Data/Data files/countrylines.json', function(error,linedata)
-{
-  lineData = linedata;
+  removeAllButEurope();
   map.svg.selectAll(".datamaps-subunit") //uit datamaps.world.js onder 'labels'
     .attr("x", function(d) {
       return map.path.centroid(d)[0]})
     .attr('y', function(d) {
       return map.path.centroid(d)[1]})
+  
 })
-var europe = ['AZE','GEO','ARM','-99','TUR','ALB','AND','AUT','BLR','BEL','BIH','BGR','HRV','CYP','CZE','DNK','EST','FRO','FIN','FRA','DEU','GIB','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX','MKD','MLT','MDA','MCO','NLD','NOR','POL','PRT','ROU','RUS','SMR','SRB','SVK','SVN','ESP','SWE','CHE','UKR','GBR','VAT','RSB','IMN','XKX','MNE'];
-var allcountries = map.svg.selectAll(".datamaps-subunit");
-for(var i = 0; i < allcountries[0].length; i++)
+d3.json('Data/Data files/countrylines.json', function(error,linedata)
 {
-  var inEurope = false;
-  for(var j = 0; j < europe.length; j++)
-  {
-    if(allcountries[0][i].id == europe[j])
-    {
-      inEurope = true
-    }
-  }
-  if(inEurope == false){allcountries[0][i].remove()}
-}
+  lineData = linedata;
+})
+
+
+
 if(window.addEventListener) {
     window.addEventListener('resize', function() {
         windowChange();
     }, true);
-function setSlider(){
-  d3.select('#slider')
-  .attr('min', startYear)
-  .attr('max',endYear)
 
-  // d3.select('#map').append(d3.slider().axis(true).min(startYear).max(endYear).step(5).on("slide", function(evt, value) {
-  //   console.log(d3.select('#slider3text').text(value));
-  // }))
+function setSlider()
+{
+  slider = d3.select('#slider');
+  slider.value = endYear;
+  slider.attr('min',startYear).attr('max',endYear)
+  slider.on('input', function(){
+    setTimeout(null,500);
+    drawLines(currentcountry, this.value, d3.select('input[name="buttons"]:checked').node().value);
+  })
 }
 
 function drawBars(year)
@@ -90,14 +84,14 @@ function drawBars(year)
     .attr("height", function(d){return x(d)})
 
 }
-function drawGraph(country)
+function drawGraph(country) //http://code.tutsplus.com/tutorials/building-a-multi-line-chart-using-d3js--cms-22935
 {
-  if(country != null)
+  if(country != null) // on windowchange this part doesn't have to be executed
   {
     countryAlreadySelected = false;
     for(var i = 0; i < countriesInGraph_name.length;i++)
     {
-      if(countriesInGraph_name[i] == country)
+      if(countriesInGraph_name[i] == country) // Do this if DESELECTION
       {
         d3.selectAll('#'+ country + '_linegraph').remove();
         d3.selectAll('.datamaps-arc').remove();
@@ -105,10 +99,11 @@ function drawGraph(country)
         countriesInGraph_Exportdata.splice(i,1);
         countriesInGraph_name.splice(i,1);
         selectedCountries[country] = '#ABDDA4'
+        currentcountry = null;
         countryAlreadySelected = true;
       }
     }
-    if(countryAlreadySelected == false)
+    if(countryAlreadySelected == false) // Do this if SELECTION
     {
       countriesInGraph_name.push(country);
       var countryImport=[];
@@ -200,7 +195,7 @@ function drawGraph(country)
             .y(function(d,i) {
               return yScale(d);
   })
-  .interpolate('linear');
+  .interpolate('cardinal');
 
   var colours = ['red', 'blue', 'yellow','green', 'purple', 'orange', 'magenta','cyan', 'lime','black'];
   
@@ -246,12 +241,30 @@ function drawGraph(country)
     }
     map.updateChoropleth(selectedCountries);
   };
+  drawLines(country, Math.round(slider.value), d3.select('input[name="buttons"]:checked').node().value);
 }
 
 function drawLines(country, year, type)
 {
   var importDict = lineData['Imports'][year][country];
   var exportDict = lineData['Exports'][year][country];
+  for(key in selectedCountries)
+    {
+      selectedCountries[key] = document.getElementById(key + "_linegraph").getAttribute('stroke');
+    }
+  if(importDict == null || exportDict == null)
+  {
+    console.log("no data available for this country and or period.\nCountry: "+ country + " Year: " + year);
+    if(selectedCountries[country] != '#ABDDA4') {
+      selectedCountries[country] = '#777'}
+    map.updateChoropleth(selectedCountries);
+    return
+  }
+  else // must still fix that this works for all countries in selectedcountries
+  {
+   
+    map.updateChoropleth(selectedCountries);
+  }
   var superdict = [];
 
   if(type == 'imports')
@@ -259,9 +272,9 @@ function drawLines(country, year, type)
     for(var i = 0; i < importDict.length; i++)
     {
       dict = {}
-      dict['origin'] = {'latitude':document.getElementById(country).getAttribute('y'),
+      dict['destination'] = {'latitude':document.getElementById(country).getAttribute('y'),
                         'longitude':document.getElementById(country).getAttribute('x')};
-      dict['destination'] = {'latitude':document.getElementById(importDict[i][0]).getAttribute('y'), 
+      dict['origin'] = {'latitude':document.getElementById(importDict[i][0]).getAttribute('y'), 
                               'longitude': document.getElementById(importDict[i][0]).getAttribute('x')};
       dict['options'] = {'strokeWidth': (importDict[i][1]/1000), 'strokeColor' : 'red'};
       superdict.push(dict)
@@ -289,11 +302,22 @@ function windowChange()
 {
     var newmapscale = window.getComputedStyle(document.getElementById('map'))
     drawGraph(null);
-    setSlider();
     map.svg.transition()
       .duration(750)
       .style("stroke-width", "1.5px")
       .attr("transform", "scale:" + parseInt(newmapscale['width'])/parseInt(mapscale['width']) + ',' + parseInt(newmapscale['height'])/parseInt(mapscale['height']));
-
 }
+}
+
+function removeAllButEurope()
+{
+  var europe = ['AZE','GEO','ARM','TUR','ALB','AND','AUT','BLR','BEL','BIH','BGR','HRV','CYP','CZE','DNK','EST','FRO','FIN','FRA','DEU','GIB','GRC','HUN','ISL','IRL','ITA','LVA','LIE','LTU','LUX','MKD','MLT','MDA','MCO','NLD','NOR','POL','PRT','ROU','RUS','SMR','SRB','SVK','SVN','ESP','SWE','CHE','UKR','GBR','VAT','RSB','IMN','XKX','MNE'];
+  var allcountries = map.svg.selectAll(".datamaps-subunit");
+  for(var i = 0; i < allcountries[0].length; i++) {
+    var inEurope = false;
+    for(var j = 0; j < europe.length; j++) {
+      if(allcountries[0][i].id == europe[j]) {inEurope = true}
+    }
+    if(inEurope == false) {allcountries[0][i].remove()}
+  }
 }
